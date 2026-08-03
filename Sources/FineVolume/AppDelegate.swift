@@ -1,12 +1,17 @@
 import AppKit
 import FineVolumeCore
+import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+    private static let completedOnboardingKey = "completedFirstLaunchOnboarding"
+
     private let volumeController = SystemVolumeController(step: 0.01)
+    private let launchAtLoginManager = LaunchAtLoginManager()
     private var hotKeyManager: HotKeyManager?
     private var statusItem: NSStatusItem?
     private var currentVolumeItem: NSMenuItem?
     private var enabledItem: NSMenuItem?
+    private var launchAtLoginItem: NSMenuItem?
     private var errorItem: NSMenuItem?
     private var isEnabled = true
 
@@ -15,10 +20,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         configureStatusItem()
         enableShortcuts()
         refreshVolumeDisplay()
+        refreshLaunchAtLoginDisplay()
+        showFirstLaunchOnboardingIfNeeded()
     }
 
     func menuWillOpen(_ menu: NSMenu) {
         refreshVolumeDisplay()
+        refreshLaunchAtLoginDisplay()
     }
 
     @objc private func toggleEnabled() {
@@ -35,6 +43,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func quit() {
         NSApp.terminate(nil)
+    }
+
+    @objc private func toggleLaunchAtLogin() {
+        do {
+            switch launchAtLoginManager.status {
+            case .enabled:
+                try launchAtLoginManager.disable()
+            case .requiresApproval:
+                launchAtLoginManager.openSystemSettings()
+            case .notRegistered, .notFound:
+                try launchAtLoginManager.enable()
+                showLoginApprovalIfNeeded()
+            @unknown default:
+                break
+            }
+            refreshLaunchAtLoginDisplay()
+        } catch {
+            showModalError(
+                title: "Couldn’t Change Login Setting",
+                message: error.localizedDescription
+            )
+        }
     }
 
     private func configureStatusItem() {
@@ -80,6 +110,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
 
+        let launchAtLoginItem = NSMenuItem(
+            title: "Launch at Login",
+            action: #selector(toggleLaunchAtLogin),
+            keyEquivalent: ""
+        )
+        launchAtLoginItem.target = self
+        menu.addItem(launchAtLoginItem)
+        self.launchAtLoginItem = launchAtLoginItem
+
+        menu.addItem(.separator())
+
         let quitItem = NSMenuItem(
             title: "Quit Fine Volume",
             action: #selector(quit),
@@ -90,6 +131,92 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         statusItem.menu = menu
         self.statusItem = statusItem
+    }
+
+    private func showFirstLaunchOnboardingIfNeeded() {
+        guard ProcessInfo.processInfo.environment["FINEVOLUME_SKIP_ONBOARDING"] != "1" else {
+            return
+        }
+
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: Self.completedOnboardingKey) else { return }
+
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "Welcome to Fine Volume"
+        alert.informativeText = """
+        Use Control + Option + Up Arrow or Down Arrow to change your Mac’s volume in 1% steps.
+
+        Fine Volume does not need Accessibility, Input Monitoring, microphone, or audio-recording permission.
+
+        Would you like Fine Volume to start automatically when you log in?
+        """
+        alert.addButton(withTitle: "Launch at Login")
+        alert.addButton(withTitle: "Not Now")
+
+        let response = alert.runModal()
+        defaults.set(true, forKey: Self.completedOnboardingKey)
+
+        guard response == .alertFirstButtonReturn else { return }
+
+        do {
+            try launchAtLoginManager.enable()
+            refreshLaunchAtLoginDisplay()
+            showLoginApprovalIfNeeded()
+        } catch {
+            showModalError(
+                title: "Couldn’t Enable Launch at Login",
+                message: error.localizedDescription
+            )
+        }
+    }
+
+    private func showLoginApprovalIfNeeded() {
+        guard launchAtLoginManager.status == .requiresApproval else { return }
+
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "Approve Launch at Login"
+        alert.informativeText = "macOS needs your approval in System Settings → General → Login Items."
+        alert.addButton(withTitle: "Open Login Items")
+        alert.addButton(withTitle: "Later")
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            launchAtLoginManager.openSystemSettings()
+        }
+    }
+
+    private func refreshLaunchAtLoginDisplay() {
+        guard let launchAtLoginItem else { return }
+
+        switch launchAtLoginManager.status {
+        case .enabled:
+            launchAtLoginItem.title = "Launch at Login"
+            launchAtLoginItem.state = .on
+        case .requiresApproval:
+            launchAtLoginItem.title = "Launch at Login — Approval Required"
+            launchAtLoginItem.state = .mixed
+        case .notRegistered:
+            launchAtLoginItem.title = "Launch at Login"
+            launchAtLoginItem.state = .off
+        case .notFound:
+            launchAtLoginItem.title = "Launch at Login — Unavailable"
+            launchAtLoginItem.state = .off
+        @unknown default:
+            launchAtLoginItem.title = "Launch at Login"
+            launchAtLoginItem.state = .off
+        }
+    }
+
+    private func showModalError(title: String, message: String) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = title
+        alert.informativeText = message
+        alert.runModal()
     }
 
     private func enableShortcuts() {
