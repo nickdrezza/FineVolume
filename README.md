@@ -1,6 +1,6 @@
 # Fine Volume
 
-[![CI](https://github.com/guidrezza/FineVolume/actions/workflows/ci.yml/badge.svg)](https://github.com/guidrezza/FineVolume/actions/workflows/ci.yml)
+[![CI](https://github.com/nickdrezza/FineVolume/actions/workflows/ci.yml/badge.svg)](https://github.com/nickdrezza/FineVolume/actions/workflows/ci.yml)
 [![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)](https://support.apple.com/macos)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -56,7 +56,7 @@ of silently failing.
 
 ## Install
 
-1. Download `FineVolume.zip` from the [latest release](https://github.com/guidrezza/FineVolume/releases/latest).
+1. Download `FineVolume.zip` from the [latest release](https://github.com/nickdrezza/FineVolume/releases/latest).
 2. Unzip it and move `FineVolume.app` to Applications.
 3. Open Fine Volume.
 4. Choose whether it should launch at login.
@@ -70,7 +70,7 @@ Fine Volume has no third-party dependencies. Apple's command-line developer
 tools are sufficient.
 
 ```sh
-git clone https://github.com/guidrezza/FineVolume.git
+git clone https://github.com/nickdrezza/FineVolume.git
 cd FineVolume
 make test
 make package
