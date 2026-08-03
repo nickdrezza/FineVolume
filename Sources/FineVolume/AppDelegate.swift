@@ -3,14 +3,16 @@ import FineVolumeCore
 import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    private static let completedOnboardingKey = "completedFirstLaunchOnboarding"
+    private static let completedOnboardingKey = "completedMediaKeyOnboarding"
+    private static let askedLaunchAtLoginKey = "askedLaunchAtLogin"
 
     private let volumeController = SystemVolumeController(step: 0.01)
     private let launchAtLoginManager = LaunchAtLoginManager()
-    private var hotKeyManager: HotKeyManager?
+    private var mediaKeyManager: MediaKeyManager?
     private var statusItem: NSStatusItem?
     private var currentVolumeItem: NSMenuItem?
     private var enabledItem: NSMenuItem?
+    private var mediaKeyAccessItem: NSMenuItem?
     private var launchAtLoginItem: NSMenuItem?
     private var errorItem: NSMenuItem?
     private var isEnabled = true
@@ -18,15 +20,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         configureStatusItem()
-        enableShortcuts()
         refreshVolumeDisplay()
         refreshLaunchAtLoginDisplay()
-        showFirstLaunchOnboardingIfNeeded()
+        refreshMediaKeyAccessDisplay()
+        startOnboardingOrMediaKeys()
     }
 
     func menuWillOpen(_ menu: NSMenu) {
         refreshVolumeDisplay()
         refreshLaunchAtLoginDisplay()
+        refreshMediaKeyAccessDisplay()
     }
 
     @objc private func toggleEnabled() {
@@ -34,9 +37,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         enabledItem?.state = isEnabled ? .on : .off
 
         if isEnabled {
-            enableShortcuts()
+            enableMediaKeys()
         } else {
-            hotKeyManager?.stop()
+            mediaKeyManager?.stop()
+            mediaKeyManager = nil
             clearError()
         }
     }
@@ -64,6 +68,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 title: "Couldn’t Change Login Setting",
                 message: error.localizedDescription
             )
+        }
+    }
+
+    @objc private func requestMediaKeyAccess() {
+        MediaKeyPermissionManager.requestAccess()
+        refreshMediaKeyAccessDisplay()
+        enableMediaKeys()
+
+        if !MediaKeyPermissionManager.isAuthorized {
+            showPrivacySettingsPrompt()
         }
     }
 
@@ -101,12 +115,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         self.enabledItem = enabledItem
 
         let shortcutItem = NSMenuItem(
-            title: "⌃⌥↑ / ⌃⌥↓  ·  1%",
+            title: "⌃⌥ Volume Up / Down  ·  1%",
             action: nil,
             keyEquivalent: ""
         )
         shortcutItem.isEnabled = false
         menu.addItem(shortcutItem)
+
+        let mediaKeyAccessItem = NSMenuItem(
+            title: "Grant Volume-Key Access…",
+            action: #selector(requestMediaKeyAccess),
+            keyEquivalent: ""
+        )
+        mediaKeyAccessItem.target = self
+        menu.addItem(mediaKeyAccessItem)
+        self.mediaKeyAccessItem = mediaKeyAccessItem
 
         menu.addItem(.separator())
 
@@ -133,13 +156,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         self.statusItem = statusItem
     }
 
-    private func showFirstLaunchOnboardingIfNeeded() {
+    private func startOnboardingOrMediaKeys() {
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: Self.completedOnboardingKey) {
+            enableMediaKeys()
+        } else {
+            showFirstLaunchOnboarding()
+        }
+    }
+
+    private func showFirstLaunchOnboarding() {
         guard ProcessInfo.processInfo.environment["FINEVOLUME_SKIP_ONBOARDING"] != "1" else {
+            enableMediaKeys()
             return
         }
 
         let defaults = UserDefaults.standard
-        guard !defaults.bool(forKey: Self.completedOnboardingKey) else { return }
 
         NSApp.activate(ignoringOtherApps: true)
 
@@ -147,23 +179,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         alert.alertStyle = .informational
         alert.messageText = "Welcome to Fine Volume"
         alert.informativeText = """
-        Use Control + Option + Up Arrow or Down Arrow to change your Mac’s volume in 1% steps.
+        Use Control + Option + Volume Up or Volume Down to change your Mac’s volume in 1% steps.
 
-        Fine Volume does not need Accessibility, Input Monitoring, microphone, or audio-recording permission.
+        Fine Volume needs Accessibility and Input Monitoring permission to replace macOS’s normal volume-key action. It does not record audio or collect data.
 
-        Would you like Fine Volume to start automatically when you log in?
+        Grant access now?
         """
-        alert.addButton(withTitle: "Launch at Login")
+        alert.addButton(withTitle: "Grant Access")
         alert.addButton(withTitle: "Not Now")
 
         let response = alert.runModal()
         defaults.set(true, forKey: Self.completedOnboardingKey)
 
+        if response == .alertFirstButtonReturn {
+            requestMediaKeyAccess()
+        }
+
+        showLaunchAtLoginPromptIfNeeded()
+        enableMediaKeys()
+    }
+
+    private func showLaunchAtLoginPromptIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: Self.askedLaunchAtLoginKey) else { return }
+
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "Launch Fine Volume at Login?"
+        alert.informativeText = "Fine Volume can be ready whenever you sign in. You can change this later from its menu-bar menu or System Settings."
+        alert.addButton(withTitle: "Enable")
+        alert.addButton(withTitle: "Not Now")
+
+        let response = alert.runModal()
+        defaults.set(true, forKey: Self.askedLaunchAtLoginKey)
+
         guard response == .alertFirstButtonReturn else { return }
 
         do {
             try launchAtLoginManager.enable()
-            refreshLaunchAtLoginDisplay()
             showLoginApprovalIfNeeded()
         } catch {
             showModalError(
@@ -171,6 +226,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 message: error.localizedDescription
             )
         }
+
+        refreshLaunchAtLoginDisplay()
     }
 
     private func showLoginApprovalIfNeeded() {
@@ -210,6 +267,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    private func refreshMediaKeyAccessDisplay() {
+        guard let mediaKeyAccessItem else { return }
+
+        if MediaKeyPermissionManager.isAuthorized {
+            mediaKeyAccessItem.title = "Volume-Key Access Granted"
+            mediaKeyAccessItem.state = .on
+        } else {
+            mediaKeyAccessItem.title = "Grant Volume-Key Access…"
+            mediaKeyAccessItem.state = .off
+        }
+    }
+
+    private func showPrivacySettingsPrompt() {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "Allow Volume-Key Access"
+        alert.informativeText = "Enable Fine Volume in System Settings → Privacy & Security → Accessibility and Input Monitoring, then return to Fine Volume."
+        alert.addButton(withTitle: "Open Privacy & Security")
+        alert.addButton(withTitle: "Later")
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            MediaKeyPermissionManager.openPrivacySettings()
+        }
+    }
+
     private func showModalError(title: String, message: String) {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
@@ -219,23 +303,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         alert.runModal()
     }
 
-    private func enableShortcuts() {
-        let manager = HotKeyManager { [weak self] hotKey in
-            self?.handle(hotKey)
+    private func enableMediaKeys() {
+        guard isEnabled, mediaKeyManager == nil else { return }
+        guard MediaKeyPermissionManager.isAuthorized else {
+            showError(MediaKeyManagerError.permissionRequired.localizedDescription)
+            return
+        }
+
+        let manager = MediaKeyManager { [weak self] mediaKey in
+            self?.handle(mediaKey)
         }
 
         do {
             try manager.start()
-            hotKeyManager = manager
+            mediaKeyManager = manager
             clearError()
         } catch {
-            hotKeyManager = nil
+            mediaKeyManager = nil
             showError(error.localizedDescription)
         }
     }
 
-    private func handle(_ hotKey: FineVolumeHotKey) {
-        let direction: VolumeDirection = hotKey == .volumeUp ? .up : .down
+    private func handle(_ mediaKey: FineVolumeMediaKey) {
+        let direction: VolumeDirection = mediaKey == .volumeUp ? .up : .down
 
         do {
             let volume = try volumeController.adjust(direction)

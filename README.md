@@ -9,38 +9,38 @@ one-percentage-point steps.
 
 ## Shortcuts
 
-- `Control + Option + Up Arrow` increases volume by 1%
-- `Control + Option + Down Arrow` decreases volume by 1%
+- `Control + Option + Volume Up` increases volume by 1%
+- `Control + Option + Volume Down` decreases volume by 1%
 
 The menu-bar speaker icon shows the current volume and lets you disable the
 shortcuts or change the Launch at Login setting.
 
 ## Why Fine Volume?
 
-The Mac's volume keys use relatively large steps. macOS includes a finer
-Option-Shift shortcut, but Fine Volume provides predictable 1% adjustments with
-a memorable global shortcut.
-
-Fine Volume registers two ordinary global hotkeys instead of intercepting every
-keyboard event. This keeps the app small and avoids sensitive privacy access.
+The Mac's volume keys use relatively large steps. Fine Volume provides
+predictable 1% adjustments using the physical volume keys without requiring
+you to change your usual hand position.
 
 ## Permissions
 
-Fine Volume requires **no macOS privacy permissions**:
+Fine Volume requests two macOS privacy permissions on first launch:
 
-- No Accessibility permission
-- No Input Monitoring permission
-- No microphone or audio-recording permission
-- No Screen Recording permission
-- No network access
+- **Input Monitoring**, so it can receive the Volume Up and Volume Down media
+  key events while another app is active.
+- **Accessibility**, so it can consume only the matching Control-Option media
+  key events and prevent macOS from also applying its normal larger step.
+
+Fine Volume does not request microphone, audio-recording, Screen Recording, or
+network access. It filters only the two volume media keys when both Control and
+Option are held; every other key event is passed straight through.
 
 Core Audio changes the current output device's volume directly. The optional
 Launch at Login feature is registered through Apple's Service Management API
 and remains visible and controllable in System Settings → General → Login Items.
 
-On first launch, Fine Volume explains its shortcuts and privacy behavior, then
-asks whether it should launch at login. It never enables that setting without
-the user's choice.
+On first launch, Fine Volume explains and requests the required privacy access,
+then separately asks whether it should launch at login. It never enables either
+setting without the user's choice.
 
 Read the complete [privacy statement](PRIVACY.md).
 
@@ -59,7 +59,8 @@ of silently failing.
 1. Download `FineVolume.zip` from the [latest release](https://github.com/nickdrezza/FineVolume/releases/latest).
 2. Unzip it and move `FineVolume.app` to Applications.
 3. Open Fine Volume.
-4. Choose whether it should launch at login.
+4. Allow Fine Volume under **Accessibility** and **Input Monitoring** when
+   macOS asks, then choose whether it should launch at login.
 
 Until releases are Developer ID notarized, macOS may require Control-clicking
 the app and choosing **Open** the first time.
@@ -83,7 +84,8 @@ The Universal app and ZIP archive are written to `dist/`.
 - **AppKit** provides the menu-bar interface and first-launch onboarding.
 - **Core Audio** reads and changes the default output device's virtual main
   volume.
-- **Carbon Hot Key APIs** register only the two explicit global shortcuts.
+- **Core Graphics event tap** filters only Control-Option Volume Up and Volume
+  Down media-key events.
 - **Service Management** controls the optional Launch at Login registration.
 
 More detail is available in [Architecture](docs/ARCHITECTURE.md).

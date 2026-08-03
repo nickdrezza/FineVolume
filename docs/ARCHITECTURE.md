@@ -16,17 +16,21 @@ device.
 
 ## FineVolume app
 
-The executable target contains four small pieces:
+The executable target contains five small pieces:
 
 - `AppDelegate` builds the menu and coordinates user-visible state.
-- `HotKeyManager` registers the two global shortcuts with macOS.
+- `MediaKeyManager` filters the two intended volume media-key combinations.
+- `MediaKeyPermissionManager` checks and requests the associated macOS privacy
+  access.
 - `LaunchAtLoginManager` wraps `SMAppService.mainApp`.
 - `main.swift` starts the accessory application without a Dock icon.
 
 ## Privacy boundary
 
-The hotkey API reports only registered shortcut activations. Fine Volume does
-not install an event tap or request Input Monitoring or Accessibility access.
+Fine Volume uses an active Core Graphics event tap, which macOS protects with
+Input Monitoring and Accessibility permission. The callback inspects only
+system-defined media-key events, consumes Volume Up or Down only while both
+Control and Option are held, and passes every other event through unchanged.
 Core Audio volume properties contain numeric device-control values, not audio
 samples.
 

@@ -23,6 +23,11 @@ Create a local Universal app bundle:
 make package
 ```
 
+For a manual shortcut check, open the generated `dist/FineVolume.app`, grant
+Accessibility and Input Monitoring access, then verify that Control-Option
+Volume Up and Volume Down move the menu's displayed level by exactly 1%. Verify
+that unmodified volume keys still use macOS's normal behavior.
+
 ## Pull requests
 
 1. Keep changes focused on Fine Volume's small, native scope.
