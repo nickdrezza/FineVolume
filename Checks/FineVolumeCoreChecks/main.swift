@@ -43,5 +43,15 @@ expectEqual(
     0.01,
     "out-of-range low input should be sanitized"
 )
+expectEqual(
+    VolumeMath.adjusted(0.50, direction: .up, step: 0.05),
+    0.55,
+    "custom steps should be applied precisely"
+)
+expectEqual(
+    VolumeMath.adjusted(0.50, direction: .down, step: -1),
+    0.50,
+    "negative steps should be treated as zero"
+)
 
 print("FineVolumeCore checks passed.")

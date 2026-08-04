@@ -2,6 +2,35 @@
 
 All notable changes to Fine Volume are documented here.
 
+## 0.5.0 — 2026-08-04
+
+- Replaced unsupported system-defined-event interception with Apple's public
+  HID key-remapping API.
+- Volume Up/Down are remapped to private function keys only while Control is
+  held; unmodified volume keys remain entirely native.
+- Reduced the required privacy access to Input Monitoring only.
+- Preserve existing user key mappings and restore them immediately when
+  Control is released, shortcuts are disabled, or the app quits.
+- Added a reproducible tag-based GitHub release workflow and documented the
+  release process.
+
+## 0.4.0 — 2026-08-04
+
+- Restored the requested Control + Volume Up/Down shortcut using a narrowly
+  filtered media-key event tap.
+- Added explicit Accessibility and Input Monitoring setup with live status in
+  the menu-bar menu.
+- Kept the Hyper-key arrow shortcut as a no-permission fallback.
+- Added the volume HUD to both shortcut paths.
+
+## 0.3.0 — 2026-08-03
+
+- Replaced media-key interception with Control-Option-Command-Shift plus Up or
+  Down Arrow global hotkeys for compatibility with macOS 27 and to avoid common
+  window-manager bindings.
+- Removed the Accessibility and Input Monitoring permission requirement.
+- Added a temporary volume HUD with the exact percentage and a progress bar.
+
 ## 0.2.0 — 2026-08-03
 
 - Replaced the conflicting arrow-key shortcut with Control-Option-Volume Up and

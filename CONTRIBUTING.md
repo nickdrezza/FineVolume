@@ -24,9 +24,11 @@ make package
 ```
 
 For a manual shortcut check, open the generated `dist/FineVolume.app`, grant
-Accessibility and Input Monitoring access, then verify that Control-Option
-Volume Up and Volume Down move the menu's displayed level by exactly 1%. Verify
-that unmodified volume keys still use macOS's normal behavior.
+Fine Volume access under Input Monitoring, then verify that
+Control + Volume Up or Down moves the menu's displayed level by exactly 1% and
+briefly displays the volume HUD. Verify that unmodified volume keys retain
+macOS's normal behavior. Also verify the Hyper-key arrow fallback on a clean
+machine without those permissions.
 
 ## Pull requests
 

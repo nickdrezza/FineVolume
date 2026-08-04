@@ -1,11 +1,5 @@
-import AppKit
 import CoreGraphics
-import IOKit
-
-enum FineVolumeMediaKey {
-    case volumeUp
-    case volumeDown
-}
+import Foundation
 
 enum MediaKeyManagerError: LocalizedError {
     case permissionRequired
@@ -14,22 +8,26 @@ enum MediaKeyManagerError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .permissionRequired:
-            return "Allow Accessibility and Input Monitoring to use Control-Option-Volume."
+            return "Enable Input Monitoring for Fine Volume to use Control + Volume Up/Down."
         case .eventTapUnavailable:
-            return "Fine Volume could not listen for the volume keys."
+            return "Fine Volume could not monitor the Control key."
         }
     }
 }
 
 final class MediaKeyManager {
-    typealias Handler = (FineVolumeMediaKey) -> Void
+    typealias ErrorHandler = (Error) -> Void
 
-    private let handler: Handler
+    private let remapper: HIDVolumeKeyRemapper
+    private let errorHandler: ErrorHandler
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
+    private var watchdogTimer: Timer?
+    private var isControlDown = false
 
-    init(handler: @escaping Handler) {
-        self.handler = handler
+    init(errorHandler: @escaping ErrorHandler) throws {
+        remapper = try HIDVolumeKeyRemapper()
+        self.errorHandler = errorHandler
     }
 
     deinit {
@@ -42,13 +40,13 @@ final class MediaKeyManager {
             throw MediaKeyManagerError.permissionRequired
         }
 
-        let eventMask = CGEventMask(1) << UInt64(NX_SYSDEFINED)
+        let eventMask = CGEventMask(1) << CGEventType.flagsChanged.rawValue
         guard let eventTap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
-            options: .defaultTap,
+            options: .listenOnly,
             eventsOfInterest: eventMask,
-            callback: fineVolumeMediaKeyCallback,
+            callback: fineVolumeModifierCallback,
             userInfo: Unmanaged.passUnretained(self).toOpaque()
         ) else {
             throw MediaKeyManagerError.eventTapUnavailable
@@ -67,9 +65,27 @@ final class MediaKeyManager {
         self.runLoopSource = runLoopSource
         CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
         CGEvent.tapEnable(tap: eventTap, enable: true)
+
+        updateControlState(
+            CGEventSource.flagsState(.combinedSessionState).contains(.maskControl)
+        )
+        watchdogTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) {
+            [weak self] _ in
+            self?.updateControlState(
+                CGEventSource.flagsState(.combinedSessionState).contains(.maskControl)
+            )
+        }
     }
 
     func stop() {
+        watchdogTimer?.invalidate()
+        watchdogTimer = nil
+
+        if isControlDown {
+            try? remapper.setEnabled(false)
+            isControlDown = false
+        }
+
         if let runLoopSource {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
             self.runLoopSource = nil
@@ -81,52 +97,40 @@ final class MediaKeyManager {
         }
     }
 
-    fileprivate func handle(_ mediaKey: FineVolumeMediaKey) {
-        handler(mediaKey)
+    fileprivate func handleFlagsChanged(_ event: CGEvent) {
+        updateControlState(event.flags.contains(.maskControl))
     }
 
     fileprivate func reenableTap() {
         guard let eventTap else { return }
         CGEvent.tapEnable(tap: eventTap, enable: true)
+        updateControlState(
+            CGEventSource.flagsState(.combinedSessionState).contains(.maskControl)
+        )
     }
 
-    fileprivate func isFineVolumeShortcut(_ event: CGEvent) -> Bool {
-        let flags = event.flags.union(CGEventSource.flagsState(.combinedSessionState))
-        return flags.contains(.maskControl) && flags.contains(.maskAlternate)
+    private func updateControlState(_ controlDown: Bool) {
+        guard controlDown != isControlDown else { return }
+
+        do {
+            try remapper.setEnabled(controlDown)
+            isControlDown = controlDown
+        } catch {
+            errorHandler(error)
+        }
     }
 }
 
-private let fineVolumeMediaKeyCallback: CGEventTapCallBack = { _, type, event, userData in
+private let fineVolumeModifierCallback: CGEventTapCallBack = { _, type, event, userData in
     guard let userData else { return Unmanaged.passUnretained(event) }
 
     let manager = Unmanaged<MediaKeyManager>.fromOpaque(userData).takeUnretainedValue()
 
     if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
         manager.reenableTap()
-        return Unmanaged.passUnretained(event)
+    } else if type == .flagsChanged {
+        manager.handleFlagsChanged(event)
     }
 
-    guard type.rawValue == NX_SYSDEFINED,
-          let systemEvent = NSEvent(cgEvent: event),
-          systemEvent.subtype.rawValue == Int(NX_SUBTYPE_AUX_CONTROL_BUTTONS)
-    else {
-        return Unmanaged.passUnretained(event)
-    }
-
-    let data1 = UInt32(truncatingIfNeeded: systemEvent.data1)
-    let keyCode = Int((data1 >> 16) & 0xFFFF)
-
-    guard keyCode == NX_KEYTYPE_SOUND_UP || keyCode == NX_KEYTYPE_SOUND_DOWN,
-          manager.isFineVolumeShortcut(event)
-    else {
-        return Unmanaged.passUnretained(event)
-    }
-
-    let keyState = UInt16(truncatingIfNeeded: data1)
-    let isKeyDown = ((keyState >> 8) & 0xFF) == 0xA
-    if isKeyDown {
-        manager.handle(keyCode == NX_KEYTYPE_SOUND_UP ? .volumeUp : .volumeDown)
-    }
-
-    return nil
+    return Unmanaged.passUnretained(event)
 }
