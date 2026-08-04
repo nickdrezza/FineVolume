@@ -1,37 +1,32 @@
 import AppKit
-import ApplicationServices
 import CoreGraphics
 
 enum MediaKeyPermissionManager {
-    static var isAccessibilityAuthorized: Bool {
-        AXIsProcessTrusted()
-    }
-
     static var isInputMonitoringAuthorized: Bool {
         CGPreflightListenEventAccess()
     }
 
     static var isAuthorized: Bool {
-        isAccessibilityAuthorized && isInputMonitoringAuthorized
+        isInputMonitoringAuthorized
     }
 
     static func requestAccess() {
         if !isInputMonitoringAuthorized {
             _ = CGRequestListenEventAccess()
         }
-
-        if !isAccessibilityAuthorized {
-            let options = [
-                kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true,
-            ] as CFDictionary
-            _ = AXIsProcessTrustedWithOptions(options)
-        }
     }
 
     static func openPrivacySettings() {
-        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security") else {
+        let candidates = [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent",
+            "x-apple.systempreferences:com.apple.preference.security",
+        ]
+
+        for candidate in candidates {
+            guard let url = URL(string: candidate), NSWorkspace.shared.open(url) else {
+                continue
+            }
             return
         }
-        NSWorkspace.shared.open(url)
     }
 }

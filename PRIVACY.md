@@ -11,28 +11,33 @@ client.
 
 ## System access
 
-Fine Volume requests Accessibility and Input Monitoring permission. These are
-needed to receive and consume the physical volume media-key events while other
-apps are active.
+Fine Volume requests Input Monitoring permission only when the user enables
+the physical volume-key shortcut. Its event tap receives only modifier-state
+changes so it can detect whether Control is held.
+
+Fine Volume does not request Accessibility, microphone, Screen Recording, or
+audio-capture permission.
 
 The app filters exactly two key combinations:
 
-- Control + Option + Volume Up
-- Control + Option + Volume Down
+- Control + Volume Up
+- Control + Volume Down
 
-It passes all other events through unchanged, including Volume Up or Down when
-Control and Option are not both held. Fine Volume does not request microphone,
-Screen Recording, or audio-capture permission.
+While Control is held, Fine Volume uses Apple's public HID key-remapping API to
+temporarily route those two keys to unused function keys registered to the app.
+Existing user mappings are preserved, and the temporary mappings are removed
+when Control is released, shortcuts are disabled, or the app quits. The app
+does not receive ordinary typing. The fallback is registered through macOS's
+global hot-key API.
 
 The app uses Core Audio to read and write the virtual main-volume value of the
 current default output device. It does not capture or inspect audio content.
 
 ## Launch at Login
 
-Launch at Login is optional. Fine Volume asks after first-launch permission
-onboarding and only registers the main app as a login item after an explicit
-user choice. The setting can be changed from the menu-bar menu or System
-Settings → General → Login Items.
+Launch at Login is optional. Fine Volume asks on first launch and only registers
+the main app as a login item after an explicit user choice. The setting can be
+changed from the menu-bar menu or System Settings → General → Login Items.
 
 ## Verification
 

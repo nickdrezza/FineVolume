@@ -16,23 +16,26 @@ device.
 
 ## FineVolume app
 
-The executable target contains five small pieces:
+The executable target contains eight small pieces:
 
 - `AppDelegate` builds the menu and coordinates user-visible state.
-- `MediaKeyManager` filters the two intended volume media-key combinations.
-- `MediaKeyPermissionManager` checks and requests the associated macOS privacy
-  access.
+- `MediaKeyManager` monitors Control modifier-state changes.
+- `HIDVolumeKeyRemapper` temporarily remaps the physical volume usages while
+  Control is held and preserves existing user mappings.
+- `MediaKeyPermissionManager` checks and requests Input Monitoring access.
+- `HotKeyManager` registers the no-permission arrow fallback with macOS.
+- `VolumeHUD` displays successful adjustments without activating the app.
 - `LaunchAtLoginManager` wraps `SMAppService.mainApp`.
 - `main.swift` starts the accessory application without a Dock icon.
 
 ## Privacy boundary
 
-Fine Volume uses an active Core Graphics event tap, which macOS protects with
-Input Monitoring and Accessibility permission. The callback inspects only
-system-defined media-key events, consumes Volume Up or Down only while both
-Control and Option are held, and passes every other event through unchanged.
-Core Audio volume properties contain numeric device-control values, not audio
-samples.
+Fine Volume's listen-only event tap is installed only after Input Monitoring is
+authorized and requests only modifier-state events. While Control is held,
+Apple's public HID key-remapping property maps Volume Up/Down to unused
+function keys registered to Fine Volume. The original mapping is restored when
+Control is released or the app stops. Core Audio volume properties contain
+numeric device-control values, not audio samples.
 
 ## Packaging
 
