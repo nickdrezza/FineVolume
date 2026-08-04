@@ -17,10 +17,31 @@ cleanup() {
 trap cleanup EXIT
 
 cd "${PROJECT_DIR}"
-swift build -c release --product FineVolume --arch arm64 --arch x86_64
+
+ARM64_SCRATCH_DIR="${PACKAGE_DIR}/build-arm64"
+X86_64_SCRATCH_DIR="${PACKAGE_DIR}/build-x86_64"
+
+swift build \
+    -c release \
+    --product FineVolume \
+    --arch arm64 \
+    --scratch-path "${ARM64_SCRATCH_DIR}"
+swift build \
+    -c release \
+    --product FineVolume \
+    --arch x86_64 \
+    --scratch-path "${X86_64_SCRATCH_DIR}"
+
+ARM64_BINARY="${ARM64_SCRATCH_DIR}/out/Products/Release/FineVolume"
+X86_64_BINARY="${X86_64_SCRATCH_DIR}/out/Products/Release/FineVolume"
+test -f "${ARM64_BINARY}"
+test -f "${X86_64_BINARY}"
 
 mkdir -p "${CONTENTS_DIR}/MacOS"
-cp "${PROJECT_DIR}/.build/release/FineVolume" "${CONTENTS_DIR}/MacOS/FineVolume"
+lipo -create \
+    "${ARM64_BINARY}" \
+    "${X86_64_BINARY}" \
+    -output "${CONTENTS_DIR}/MacOS/FineVolume"
 cp "${PROJECT_DIR}/Resources/Info.plist" "${CONTENTS_DIR}/Info.plist"
 
 xattr -cr "${PACKAGE_APP_DIR}"
