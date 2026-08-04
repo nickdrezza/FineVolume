@@ -10,6 +10,7 @@ ZIP_PATH="${DIST_DIR}/FineVolume.zip"
 PACKAGE_DIR="$(mktemp -d /tmp/FineVolume-package.XXXXXX)"
 PACKAGE_APP_DIR="${PACKAGE_DIR}/FineVolume.app"
 CONTENTS_DIR="${PACKAGE_APP_DIR}/Contents"
+ICONSET_DIR="${PACKAGE_DIR}/AppIcon.iconset"
 
 cleanup() {
     rm -rf "${PACKAGE_DIR}"
@@ -32,10 +33,10 @@ swift build \
     --arch x86_64 \
     --scratch-path "${X86_64_SCRATCH_DIR}"
 
-ARM64_BINARY="${ARM64_SCRATCH_DIR}/out/Products/Release/FineVolume"
-X86_64_BINARY="${X86_64_SCRATCH_DIR}/out/Products/Release/FineVolume"
-test -f "${ARM64_BINARY}"
-test -f "${X86_64_BINARY}"
+ARM64_BINARY="$(find "${ARM64_SCRATCH_DIR}" -type f -name FineVolume -not -path '*/dSYM/*' -print -quit)"
+X86_64_BINARY="$(find "${X86_64_SCRATCH_DIR}" -type f -name FineVolume -not -path '*/dSYM/*' -print -quit)"
+test -n "${ARM64_BINARY}"
+test -n "${X86_64_BINARY}"
 
 mkdir -p "${CONTENTS_DIR}/MacOS"
 lipo -create \
@@ -43,6 +44,28 @@ lipo -create \
     "${X86_64_BINARY}" \
     -output "${CONTENTS_DIR}/MacOS/FineVolume"
 cp "${PROJECT_DIR}/Resources/Info.plist" "${CONTENTS_DIR}/Info.plist"
+
+mkdir -p "${CONTENTS_DIR}/Resources" "${ICONSET_DIR}"
+typeset -a ICON_SIZES=(
+    "16 icon_16x16.png"
+    "32 icon_16x16@2x.png"
+    "32 icon_32x32.png"
+    "64 icon_32x32@2x.png"
+    "128 icon_128x128.png"
+    "256 icon_128x128@2x.png"
+    "256 icon_256x256.png"
+    "512 icon_256x256@2x.png"
+    "512 icon_512x512.png"
+    "1024 icon_512x512@2x.png"
+)
+for icon_size in "${ICON_SIZES[@]}"; do
+    size="${icon_size%% *}"
+    filename="${icon_size#* }"
+    sips -z "${size}" "${size}" \
+        "${PROJECT_DIR}/Resources/AppIcon.png" \
+        --out "${ICONSET_DIR}/${filename}" >/dev/null
+done
+iconutil -c icns "${ICONSET_DIR}" -o "${CONTENTS_DIR}/Resources/AppIcon.icns"
 
 xattr -cr "${PACKAGE_APP_DIR}"
 codesign --force --deep --sign - "${PACKAGE_APP_DIR}"
