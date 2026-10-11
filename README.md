@@ -3,7 +3,7 @@
 [![CI](https://github.com/nickdrezza/FineVolume/actions/workflows/ci.yml/badge.svg)](https://github.com/nickdrezza/FineVolume/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/nickdrezza/FineVolume?display_name=tag&sort=semver)](https://github.com/nickdrezza/FineVolume/releases/latest)
 [![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)](https://support.apple.com/macos)
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![AGPLv3 License](https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg)](LICENSE)
 
 Fine Volume is a tiny, native macOS menu-bar app that changes system volume in
 one-percentage-point steps.
@@ -109,4 +109,12 @@ the local workflow and project expectations.
 
 ## License
 
-Fine Volume is available under the [MIT License](LICENSE).
+This project is licensed under [GNU AGPLv3 only](LICENSE) (`AGPL-3.0-only`).
+See [NOTICE](NOTICE) for copyright information.
+
+You can use, change, and sell copies under the license terms.
+If you distribute covered code, provide its source under the same license.
+If you change the project and let users access it over a network,
+offer those users the source of your version.
+
+Earlier releases keep the license terms that applied to them.
