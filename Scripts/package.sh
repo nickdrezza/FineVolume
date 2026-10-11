@@ -46,6 +46,11 @@ lipo -create \
 cp "${PROJECT_DIR}/Resources/Info.plist" "${CONTENTS_DIR}/Info.plist"
 
 mkdir -p "${CONTENTS_DIR}/Resources" "${ICONSET_DIR}"
+cp "${PROJECT_DIR}/LICENSE" "${PROJECT_DIR}/NOTICE" "${CONTENTS_DIR}/Resources/"
+SOURCE_REF="$(git -C "${PROJECT_DIR}" rev-parse HEAD 2>/dev/null || echo main)"
+printf 'Source code: https://github.com/nickdrezza/FineVolume/archive/%s.tar.gz\nBuild instructions: https://github.com/nickdrezza/FineVolume/blob/%s/README.md\n' \
+    "$SOURCE_REF" "$SOURCE_REF" > "${CONTENTS_DIR}/Resources/SOURCE.txt"
+
 typeset -a ICON_SIZES=(
     "16 icon_16x16.png"
     "32 icon_16x16@2x.png"
