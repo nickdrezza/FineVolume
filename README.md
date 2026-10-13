@@ -18,8 +18,9 @@ Release Control and the normal volume keys work as usual.
 | `Control + Volume Down` | Decrease volume by 1 percentage point. |
 | `Control + Option + Command + Shift + Up/Down` | Use the arrow-key fallback. |
 
-A small volume display shows each change. The menu-bar speaker shows the current level.
-Its menu lets you enable shortcuts and choose Launch at Login.
+A small volume display shows each change. Hover over the menu-bar speaker to see the level.
+Click it to see the up/down keys, **Open at Login**, and **Quit Fine Volume**.
+The menu shows Control + volume keys when ready, or the arrow-key fallback otherwise.
 
 ## Install
 
@@ -39,7 +40,7 @@ You can build from source instead.
 
 Input Monitoring lets the app detect when Control is held. The event tap listens only for
 modifier changes, not normal typing. The arrow-key fallback works without that permission.
-Launch at Login stays off until you choose it and can be managed in System Settings.
+Open at Login stays off until you choose it and can be managed in System Settings.
 
 Read [PRIVACY.md](PRIVACY.md) for the full privacy statement.
 

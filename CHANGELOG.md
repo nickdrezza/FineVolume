@@ -2,6 +2,14 @@
 
 All notable changes to Fine Volume are documented here.
 
+## Unreleased
+
+- Show only the up/down shortcuts, Open at Login, and Quit in the menu.
+- Show the volume-key mapping when available, or the arrow fallback otherwise.
+- Remove the shortcut enable switch and the separate login prompt.
+- Move the current volume and errors to the speaker tooltip. Keep the volume HUD.
+- Shorten the one-time permission prompt.
+
 ## 0.5.0 — 2026-08-04
 
 - Replaced unsupported system-defined-event interception with Apple's public
