@@ -2,7 +2,7 @@
 
 All notable changes to Fine Volume are documented here.
 
-## Unreleased
+## 0.6.0 — 2026-10-13
 
 - Show only the up/down shortcuts, Open at Login, and Quit in the menu.
 - Show the volume-key mapping when available, or the arrow fallback otherwise.

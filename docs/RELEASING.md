@@ -23,12 +23,13 @@ workflow creates a universal, ad-hoc signed app bundle and attaches
    unzip -l dist/FineVolume.zip
    ```
 
-5. Commit the versioned changes and create an annotated tag whose version
-   matches the plist, for example:
+5. Commit the changes on a branch. Open a pull request and merge it after
+   the checks pass. Fetch the merged commit and switch to it. Create an
+   annotated tag that matches the plist. Push only the tag:
 
    ```sh
-   git tag -a v0.5.0 -m "Fine Volume 0.5.0"
-   git push origin main --follow-tags
+   git tag -a v0.6.0 -m "Fine Volume 0.6.0"
+   git push origin v0.6.0
    ```
 
 6. Confirm that the release workflow passes and that the ZIP is attached to
