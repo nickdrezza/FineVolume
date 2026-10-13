@@ -1,83 +1,68 @@
 # Fine Volume
 
-[![CI](https://github.com/nickdrezza/FineVolume/actions/workflows/ci.yml/badge.svg)](https://github.com/nickdrezza/FineVolume/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/nickdrezza/FineVolume?display_name=tag&sort=semver)](https://github.com/nickdrezza/FineVolume/releases/latest)
-[![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)](https://support.apple.com/macos)
-[![AGPLv3 License](https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg)](LICENSE)
+**Your volume. One percent at a time.**
 
-Fine Volume is a tiny, native macOS menu-bar app that changes system volume in
-one-percentage-point steps.
+![Fine Volume changes volume from 69 percent to 70 percent.](docs/readme-banner.svg)
 
-The current public release is **v0.5.0**. It is open source, has no third-party
-dependencies, and is distributed as a universal Apple Silicon + Intel app.
+A native macOS menu-bar app for precise volume control.
+Hold Control and press a volume key to move one percentage point.
+Release Control and the normal volume keys work as usual.
 
-## Shortcuts
+[**Download for macOS →**](https://github.com/nickdrezza/FineVolume/releases/latest)
 
-- `Control + Volume Up` increases volume by 1%
-- `Control + Volume Down` decreases volume by 1%
+## Find the right level
 
-While Control is held, Fine Volume uses Apple's HID key-remapping API to route
-the two physical volume keys to its 1% handler. The mapping is removed as soon
-as Control is released, so unmodified volume keys remain entirely native.
+| Shortcut | Action |
+| --- | --- |
+| `Control + Volume Up` | Increase volume by 1 percentage point. |
+| `Control + Volume Down` | Decrease volume by 1 percentage point. |
+| `Control + Option + Command + Shift + Up/Down` | Use the arrow-key fallback. |
 
-If Input Monitoring is not available, the fallback is
-`Control + Option + Command + Shift + Up/Down Arrow`.
-
-Each adjustment displays a temporary volume HUD with the new percentage and a
-progress bar. The menu-bar speaker icon also shows the current volume and lets
-you disable the shortcuts or change the Launch at Login setting.
-
-## Why Fine Volume?
-
-The Mac's volume keys use relatively large steps. Fine Volume provides
-predictable 1% adjustments while preserving the normal behavior of the volume
-keys when the extra modifier is not held.
-
-## Permissions
-
-Fine Volume needs Input Monitoring permission to detect when Control is held.
-Its event tap receives only modifier-state changes; it does not monitor normal
-typing. The physical keys are remapped through Apple's public HID API, which
-requires no special privilege. Fine Volume does not request Accessibility,
-microphone, audio-recording, Screen Recording, or network access. The arrow
-fallback works without Input Monitoring and is registered through macOS's
-global hot-key API.
-
-Core Audio changes the current output device's volume directly. The optional
-Launch at Login feature is registered through Apple's Service Management API
-and remains visible and controllable in System Settings → General → Login Items.
-
-On first launch, Fine Volume explains its shortcuts, then separately asks
-whether it should launch at login. It never enables that setting without the
-user's choice.
-
-Read the complete [privacy statement](PRIVACY.md).
-
-## Requirements
-
-- macOS 13 Ventura or later
-- Apple Silicon or Intel Mac
-- An output device with software-controllable system volume
-
-Some HDMI, USB, aggregate, and professional audio devices do not expose a
-settable system volume. Fine Volume reports that limitation in its menu instead
-of silently failing.
+A small volume display shows each change. Hover over the menu-bar speaker to see the level.
+Click it to see the up/down keys, **Open at Login**, and **Quit Fine Volume**.
+The menu shows Control + volume keys when ready, or the arrow-key fallback otherwise.
 
 ## Install
 
 1. Download `FineVolume.zip` from the [latest release](https://github.com/nickdrezza/FineVolume/releases/latest).
 2. Unzip it and move `FineVolume.app` to Applications.
-3. Open Fine Volume and choose Open Permissions when prompted. Enable Fine
-   Volume under Input Monitoring, then return to the app.
-4. Choose whether it should launch at login.
+3. Open the app. Select **Open Permissions** and enable **Input Monitoring** in System Settings.
+4. Return to the app and choose whether it should launch at login.
 
-Until releases are Developer ID notarized, macOS may require Control-clicking
-the app and choosing **Open** the first time.
+Requires macOS 13 or later and an Apple silicon or Intel Mac.
+The release is a universal app. Your audio output must support software volume control.
+Some HDMI, USB, aggregate, and professional devices do not. The app reports this in its menu.
+
+The current releases are not Developer ID notarized. macOS can block a downloaded copy.
+You can build from source instead.
+
+## Permissions and privacy
+
+Input Monitoring lets the app detect when Control is held. The event tap listens only for
+modifier changes, not normal typing. The arrow-key fallback works without that permission.
+Open at Login stays off until you choose it and can be managed in System Settings.
+
+Read [PRIVACY.md](PRIVACY.md) for the full privacy statement.
+
+<details>
+<summary>How the shortcuts work</summary>
+
+While Control is held, Apple's HID API routes the two physical volume keys to the 1% handler.
+The mapping is removed when Control is released. The fallback uses the global hot-key API.
+Core Audio changes the current output device's volume.
+
+The app does not request Accessibility, microphone, audio recording, Screen Recording,
+or network access. The HID mapping requires no special privilege.
+Launch at Login uses Service Management and appears in System Settings → General → Login Items.
+
+AppKit provides the menu-bar interface and temporary volume display.
+See [Architecture](docs/ARCHITECTURE.md) for the implementation.
+
+</details>
 
 ## Build from source
 
-Fine Volume has no third-party dependencies. Apple's command-line developer
-tools are sufficient.
+Install Apple's command-line developer tools. The project has no third-party dependencies.
 
 ```sh
 git clone https://github.com/nickdrezza/FineVolume.git
@@ -86,26 +71,12 @@ make test
 make package
 ```
 
-The Universal app and ZIP archive are written to `dist/`.
+The universal app and ZIP archive are written to `dist/`.
+[CI](https://github.com/nickdrezza/FineVolume/actions/workflows/ci.yml) checks the project.
 
-## Architecture
+## Contribute
 
-- **AppKit** provides the menu-bar interface and first-launch onboarding.
-- **Core Audio** reads and changes the default output device's virtual main
-  volume.
-- **Core Graphics** monitors only Control modifier-state changes.
-- **IOKit HID** temporarily remaps the two physical volume keys while Control
-  is held.
-- **Carbon Hot Key APIs** register the no-permission Hyper-key arrow fallback.
-- **AppKit** displays the lightweight, nonactivating volume HUD.
-- **Service Management** controls the optional Launch at Login registration.
-
-More detail is available in [Architecture](docs/ARCHITECTURE.md).
-
-## Contributing
-
-Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for
-the local workflow and project expectations.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the local workflow and project rules.
 
 ## License
 

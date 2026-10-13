@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="300" viewBox="0 0 960 300" role="img" aria-labelledby="title desc">
+  <title id="title">Fine Volume. One percent at a time.</title>
+  <desc id="desc">A precise volume switch for your Mac.</desc>
+  <rect width="960" height="300" rx="24" fill="#eef2f7"/>
+  <circle cx="932" cy="8" r="170" fill="#3f75c8" opacity="0.06"/>
+  <g font-family="system-ui, sans-serif" fill="#252526">
+    <text x="52" y="105" font-size="44" font-weight="700">Fine Volume</text>
+    <text x="54" y="156" font-size="23">One percent at a time.</text>
+    <text x="54" y="218" font-size="15" fill="#5b5a60">A precise volume switch for your Mac.</text>
+  </g>
+  <rect x="545" y="72" width="138" height="156" rx="24" fill="#fff"/>
+  <rect x="755" y="72" width="150" height="156" rx="24" fill="#3f75c8"/>
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <text x="614" y="151" font-size="42" font-weight="700" fill="#273954">69%</text>
+    <text x="830" y="151" font-size="42" font-weight="700" fill="#fff">70%</text>
+    <text x="718" y="155" font-size="25" fill="#6d7888">→</text>
+  </g>
+  <rect x="568" y="179" width="92" height="6" rx="3" fill="#dbe3ee"/>
+  <rect x="568" y="179" width="63" height="6" rx="3" fill="#3f75c8"/>
+  <rect x="778" y="179" width="103" height="6" rx="3" fill="#7ba0db"/>
+  <rect x="778" y="179" width="72" height="6" rx="3" fill="#fff"/>
+</svg>

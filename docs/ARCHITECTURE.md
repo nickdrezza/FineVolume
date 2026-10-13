@@ -28,6 +28,10 @@ The executable target contains eight small pieces:
 - `LaunchAtLoginManager` wraps `SMAppService.mainApp`.
 - `main.swift` starts the accessory application without a Dock icon.
 
+The menu has two shortcut rows, Open at Login, and Quit. Shortcut rows show the
+active volume-key mapping or the arrow fallback. The current volume and errors
+are in the speaker tooltip. Detailed errors also go to the system log.
+
 ## Privacy boundary
 
 Fine Volume's listen-only event tap is installed only after Input Monitoring is

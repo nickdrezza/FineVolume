@@ -25,8 +25,8 @@ make package
 
 For a manual shortcut check, open the generated `dist/FineVolume.app`, grant
 Fine Volume access under Input Monitoring, then verify that
-Control + Volume Up or Down moves the menu's displayed level by exactly 1% and
-briefly displays the volume HUD. Verify that unmodified volume keys retain
+Control + Volume Up or Down changes the level by exactly 1% and briefly
+displays the volume HUD. The current level is also in the speaker tooltip. Verify that unmodified volume keys retain
 macOS's normal behavior. Also verify the Hyper-key arrow fallback on a clean
 machine without those permissions.
 
@@ -42,5 +42,11 @@ machine without those permissions.
 ## Reporting bugs
 
 Include your macOS version, Mac architecture, output device, exact steps, and
-whether the menu shows an error. Do not include private system logs without
+whether the speaker tooltip shows an error. Do not include private system logs without
 reviewing them first.
+
+## Menu preview
+
+For a native menu check, run a debug build with `--preview`. The preview opens a small
+window that displays the same menu. It does not register hotkeys or request permissions.
+Do not change Open at Login during a preview check. Release builds have no preview window.
